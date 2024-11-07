@@ -1,25 +1,40 @@
 import uuid
 from django.db import models
+from django.contrib.auth.hashers import make_password
 
+def generate_uuid():
+    return str(uuid.uuid4())
 
 class Vocabulary(models.Model):
-    _id = models.CharField(max_length=100, primary_key=True, default=uuid.uuid4)
+    _id = models.CharField(max_length=100, primary_key=True, default=generate_uuid)  # Sử dụng hàm thay vì uuid.uuid4
     word = models.CharField(max_length=100)
     vietnamese = models.CharField(max_length=100)
     definition = models.TextField()
-    examples = models.JSONField()
     category = models.CharField(max_length=100)
 
     def __str__(self):
         return self.word
+    
+class Example(models.Model):
+    vocabulary = models.ForeignKey(Vocabulary, related_name="examples", on_delete=models.CASCADE)
+    sentence = models.TextField()
 
-# class User(models.Model):
-#     username = models.CharField(max_length=100, unique=True)
-#     phone = models.CharField(max_length=15, unique=True)
-#     password = models.CharField(max_length=128)
+    def __str__(self):
+        return self.sentence
 
-#     def __str__(self):
-#         return self.username
+class User(models.Model):
+    _id = models.CharField(max_length=100, primary_key=True, default=generate_uuid)
+    username = models.CharField(max_length=100, unique=True)
+    phone = models.CharField(max_length=15, unique=True)
+    password = models.CharField(max_length=128)
+
+    def save(self, *args, **kwargs):
+        if not self.password.startswith('pbkdf2_sha256$'):
+            self.password = make_password(self.password)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.username
 
 # class Topic(models.Model):  
 #     category = models.CharField(max_length=100, unique=True)  
